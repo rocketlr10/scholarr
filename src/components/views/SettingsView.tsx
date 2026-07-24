@@ -23,6 +23,7 @@ export const SettingsView: React.FC = () => {
     setAccentColor,
     preferences,
     updatePreferences,
+    setIsSchoologyTutorialOpen,
     syncSchoologyNow,
     syncGoogleCalendarNow,
     isSyncingSchoology,
@@ -157,10 +158,14 @@ export const SettingsView: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2">
-              <span className="text-xs text-slate-400">
-                Last synced: {preferences.schoology.lastSynced ? new Date(preferences.schoology.lastSynced).toLocaleString() : 'Never'}
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+              <button
+                onClick={() => setIsSchoologyTutorialOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold flex items-center space-x-1.5 transition-all"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Open Setup Tutorial Guide</span>
+              </button>
 
               <button
                 onClick={syncSchoologyNow}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { ClassCountdownWidget } from '../widgets/ClassCountdownWidget';
 import {
   CheckSquare,
   Calendar,
@@ -101,6 +102,9 @@ export const DashboardView: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* Live Class Countdown Widget */}
+      <ClassCountdownWidget />
 
       {/* Main Bento Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

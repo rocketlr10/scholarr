@@ -1,0 +1,96 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile information",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string text" },
+        "photoURL": { "type": "string" },
+        "school": { "type": "string text" },
+        "majorOrGrade": { "type": "string text" },
+        "accentColor": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "Course": {
+      "title": "Course / Class",
+      "description": "Courses enrolled by user",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "code": { "type": "string" },
+        "name": { "type": "string text" },
+        "teacher": { "type": "string text" },
+        "room": { "type": "string text" },
+        "color": { "type": "string" },
+        "scheduleDays": { "type": "array", "items": { "type": "string" } },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "syllabus": { "type": "string text" },
+        "gradeAverage": { "type": "number" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "Assignment": {
+      "title": "Assignment",
+      "description": "User tasks and homework",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "courseId": { "type": "string" },
+        "title": { "type": "string text" },
+        "description": { "type": "string text" },
+        "dueDate": { "type": "string" },
+        "dueTime": { "type": "string" },
+        "priority": { "type": "string" },
+        "status": { "type": "string" },
+        "estimatedMinutes": { "type": "number" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "Note": {
+      "title": "Study Note",
+      "description": "Rich study documents",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "courseId": { "type": "string" },
+        "title": { "type": "string text" },
+        "content": { "type": "string text" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "pinned": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "ScheduleEvent": {
+      "title": "Schedule Event",
+      "description": "User events, exams, study groups",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "courseId": { "type": "string" },
+        "title": { "type": "string text" },
+        "type": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "location": { "type": "string text" },
+        "description": { "type": "string text" }
+      }
+    },
+    "PomodoroSession": {
+      "title": "Pomodoro Session",
+      "description": "Study timer history",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "courseId": { "type": "string" },
+        "durationMinutes": { "type": "number" },
+        "completedAt": { "type": "string" },
+        "notes": { "type": "string text" }
+      }
+    }
+  }
+}

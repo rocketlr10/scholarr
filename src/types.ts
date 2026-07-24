@@ -48,6 +48,9 @@ export interface Course {
   icon: string;
   teacher: string;
   room?: string;
+  scheduleDays?: string[]; // e.g. ['Mon', 'Wed', 'Fri']
+  startTime?: string; // e.g. '09:30' (HH:mm)
+  endTime?: string; // e.g. '10:45' (HH:mm)
   schedule?: string;
   syllabus?: string;
   gradeAverage?: number; // e.g. 94.5

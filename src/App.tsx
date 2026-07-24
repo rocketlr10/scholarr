@@ -6,6 +6,7 @@ import { NotificationDrawer } from './components/NotificationDrawer';
 import { CommandPalette } from './components/CommandPalette';
 import { QuickAddModal } from './components/QuickAddModal';
 import { AuthModal } from './components/AuthModal';
+import { SchoologyTutorialModal } from './components/modals/SchoologyTutorialModal';
 
 import { DashboardView } from './components/views/DashboardView';
 import { AssignmentsView } from './components/views/AssignmentsView';
@@ -64,6 +65,7 @@ const MainContent: React.FC = () => {
       <CommandPalette />
       <QuickAddModal />
       <AuthModal />
+      <SchoologyTutorialModal />
     </div>
   );
 };

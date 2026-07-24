@@ -22,7 +22,9 @@ export const AuthModal: React.FC = () => {
     switchUser,
     loginUser,
     registerUser,
-    logoutUser
+    logoutUser,
+    loginWithGoogle,
+    isFirebaseSignedIn
   } = useApp();
 
   const [mode, setMode] = useState<'account' | 'login' | 'register'>('account');
@@ -32,8 +34,12 @@ export const AuthModal: React.FC = () => {
 
   if (!isAuthModalOpen) return null;
 
-  const handleGoogleSignIn = () => {
-    loginUser('student.google@stanford.edu', 'Google Verified Student');
+  const handleGoogleSignIn = async () => {
+    try {
+      await loginWithGoogle();
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {

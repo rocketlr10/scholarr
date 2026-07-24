@@ -49,6 +49,21 @@ export const QuickAddModal: React.FC = () => {
   const [crsName, setCrsName] = useState('');
   const [crsCode, setCrsCode] = useState('');
   const [crsTeacher, setCrsTeacher] = useState('');
+  const [crsRoom, setCrsRoom] = useState('');
+  const [crsStartTime, setCrsStartTime] = useState('09:00');
+  const [crsEndTime, setCrsEndTime] = useState('10:15');
+  const [crsDays, setCrsDays] = useState<string[]>(['Mon', 'Wed', 'Fri']);
+  const [crsColor, setCrsColor] = useState('#3B82F6');
+
+  const ALL_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  const toggleDay = (day: string) => {
+    if (crsDays.includes(day)) {
+      setCrsDays(crsDays.filter(d => d !== day));
+    } else {
+      setCrsDays([...crsDays, day]);
+    }
+  };
 
   if (!isQuickAddOpen) return null;
 
@@ -103,9 +118,14 @@ export const QuickAddModal: React.FC = () => {
     addCourse({
       name: crsName,
       code: crsCode || 'COURSE 101',
-      color: '#3B82F6',
+      color: crsColor || '#3B82F6',
       icon: 'BookOpen',
-      teacher: crsTeacher || 'Staff Instructor',
+      teacher: crsTeacher || 'Instructor',
+      room: crsRoom || 'Room TBD',
+      scheduleDays: crsDays.length > 0 ? crsDays : ['Mon', 'Wed', 'Fri'],
+      startTime: crsStartTime || '09:00',
+      endTime: crsEndTime || '10:15',
+      schedule: `${crsDays.join(', ')} • ${crsStartTime}`,
       gradeAverage: 100,
     });
     setIsQuickAddOpen(false);
@@ -391,7 +411,7 @@ export const QuickAddModal: React.FC = () => {
           )}
 
           {activeTab === 'course' && (
-            <form onSubmit={handleCreateCourse} className="space-y-4">
+            <form onSubmit={handleCreateCourse} className="space-y-3">
               <div>
                 <label className="block text-slate-300 font-medium mb-1">Course Name *</label>
                 <input
@@ -401,11 +421,11 @@ export const QuickAddModal: React.FC = () => {
                   value={crsName}
                   onChange={e => setCrsName(e.target.value)}
                   placeholder="e.g. Organic Chemistry I"
-                  className="w-full glass-input px-3.5 py-2.5 rounded-xl text-sm"
+                  className="w-full glass-input px-3.5 py-2 rounded-xl text-sm"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block text-slate-300 font-medium mb-1">Course Code</label>
                   <input
@@ -417,7 +437,7 @@ export const QuickAddModal: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Instructor / Teacher</label>
+                  <label className="block text-slate-300 font-medium mb-1">Teacher / Instructor</label>
                   <input
                     type="text"
                     value={crsTeacher}
@@ -428,12 +448,66 @@ export const QuickAddModal: React.FC = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">Room / Hall</label>
+                  <input
+                    type="text"
+                    value={crsRoom}
+                    onChange={e => setCrsRoom(e.target.value)}
+                    placeholder="e.g. Room 204"
+                    className="w-full glass-input px-2.5 py-2 rounded-xl text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">Start Time</label>
+                  <input
+                    type="time"
+                    value={crsStartTime}
+                    onChange={e => setCrsStartTime(e.target.value)}
+                    className="w-full glass-input px-2 py-2 rounded-xl text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">End Time</label>
+                  <input
+                    type="time"
+                    value={crsEndTime}
+                    onChange={e => setCrsEndTime(e.target.value)}
+                    className="w-full glass-input px-2 py-2 rounded-xl text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Class Schedule Days</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {ALL_DAYS.map(day => {
+                    const isSelected = crsDays.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => toggleDay(day)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl text-white font-semibold text-sm shadow-lg transition-all"
+                className="w-full py-2.5 mt-2 rounded-xl text-white font-semibold text-sm shadow-lg transition-all"
                 style={{ backgroundColor: 'var(--accent-color)' }}
               >
-                Add Course
+                Add Class
               </button>
             </form>
           )}
