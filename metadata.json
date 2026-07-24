@@ -1,0 +1,6 @@
+{
+  "name": "Scholar - Student Productivity Dashboard",
+  "description": "An all-in-one Apple-inspired student productivity dashboard featuring digital planner, assignment tracker, calendar, study timer, Schoology & Google Calendar sync, and analytics.",
+  "requestFramePermissions": ["notifications"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
