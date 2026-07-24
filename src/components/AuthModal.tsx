@@ -163,6 +163,20 @@ export const AuthModal: React.FC = () => {
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Switch to Guest Profile</span>
               </button>
+
+              <div className="pt-2 border-t border-white/10 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm("Are you sure you want to completely reset and wipe all local workspace data?")) {
+                      import('../utils/storage').then(m => m.wipeAllScholarData());
+                    }
+                  }}
+                  className="text-[11px] text-red-400/80 hover:text-red-300 font-medium transition-colors"
+                >
+                  Reset & Wipe All Local Data
+                </button>
+              </div>
             </div>
           )}
 

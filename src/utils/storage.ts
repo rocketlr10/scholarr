@@ -22,12 +22,42 @@ const STORAGE_KEYS = {
   PREFERENCES: 'scholar_preferences',
 };
 
-// Default User
+// Data Purge Version Migration to ensure 100% clean slate
+const DATA_VERSION = 'v4_total_reset_blank';
+if (typeof window !== 'undefined') {
+  try {
+    const currentVer = localStorage.getItem('scholar_data_version');
+    if (currentVer !== DATA_VERSION) {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('scholar_')) {
+          localStorage.removeItem(key);
+        }
+      });
+      localStorage.setItem('scholar_data_version', DATA_VERSION);
+    }
+  } catch (e) {
+    console.warn('Storage purge error:', e);
+  }
+}
+
+// Function to manually wipe all local scholar data
+export function wipeAllScholarData() {
+  if (typeof window !== 'undefined') {
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('scholar_')) {
+        localStorage.removeItem(key);
+      }
+    });
+    localStorage.setItem('scholar_data_version', DATA_VERSION);
+    window.location.reload();
+  }
+}
+
+// Default User (Blank Slate)
 export const DEFAULT_USER: User = {
   id: 'guest_student',
   name: 'Student',
   email: 'student@scholar.app',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
   school: 'My School',
   majorOrGrade: '',
   createdAt: new Date().toISOString(),

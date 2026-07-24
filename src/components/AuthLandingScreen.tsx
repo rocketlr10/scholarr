@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { wipeAllScholarData } from '../utils/storage';
 import {
   Sparkles,
   ShieldCheck,
@@ -10,7 +11,10 @@ import {
   ArrowRight,
   UserPlus,
   Compass,
-  AlertCircle
+  AlertCircle,
+  ExternalLink,
+  RotateCcw,
+  LogIn
 } from 'lucide-react';
 
 export const AuthLandingScreen: React.FC = () => {
@@ -21,27 +25,34 @@ export const AuthLandingScreen: React.FC = () => {
     loginAsGuest
   } = useApp();
 
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [school, setSchool] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [googleIframeNotice, setGoogleIframeNotice] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleGoogleAuth = async () => {
     setErrorMessage(null);
+    setGoogleIframeNotice(false);
     setLoading(true);
     try {
       await loginWithGoogle();
     } catch (err: any) {
-      console.error(err);
+      console.error('Google Auth Error:', err);
+      setGoogleIframeNotice(true);
       setErrorMessage(
-        err.message || "Google Authentication was blocked or failed. Please sign in below using your email and password."
+        "Google Sign-In popup was closed or restricted by browser iframe security. You can sign in via email/password below or open the app in a new browser tab."
       );
     } finally {
       setLoading(false);
     }
+  };
+
+  const openAppInNewTab = () => {
+    window.open(window.location.href, '_blank');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,7 +65,7 @@ export const AuthLandingScreen: React.FC = () => {
 
     setLoading(true);
     try {
-      if (mode === 'login') {
+      if (activeTab === 'login') {
         const success = await loginUserWithEmail(email, password);
         if (!success) setErrorMessage('Failed to sign in. Please check your credentials.');
       } else {
@@ -98,16 +109,56 @@ export const AuthLandingScreen: React.FC = () => {
         {/* Auth Card */}
         <div className="glass-panel p-6 rounded-3xl border border-white/10 shadow-2xl bg-slate-900/80 backdrop-blur-xl space-y-5">
           
+          {/* Tabs for Login & Create Account directly on the SAME page */}
+          <div className="p-1 rounded-2xl bg-white/5 border border-white/10 flex items-center grid grid-cols-2 gap-1 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => { setActiveTab('login'); setErrorMessage(null); }}
+              className={`py-2.5 rounded-xl transition-all flex items-center justify-center space-x-1.5 ${
+                activeTab === 'login'
+                  ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Log In</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setActiveTab('register'); setErrorMessage(null); }}
+              className={`py-2.5 rounded-xl transition-all flex items-center justify-center space-x-1.5 ${
+                activeTab === 'register'
+                  ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Create Account</span>
+            </button>
+          </div>
+
           {/* Error Message if any */}
           {errorMessage && (
-            <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs flex items-start space-x-2.5">
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-              <span>{errorMessage}</span>
+            <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs space-y-2">
+              <div className="flex items-start space-x-2.5">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <span>{errorMessage}</span>
+              </div>
+              {googleIframeNotice && (
+                <button
+                  onClick={openAppInNewTab}
+                  className="w-full mt-2 py-2 px-3 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/30 text-indigo-300 font-medium text-xs flex items-center justify-center space-x-1.5 transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open App in New Tab for Google Sign-In</span>
+                </button>
+              )}
             </div>
           )}
 
           {/* Google Auth Button */}
           <button
+            type="button"
             onClick={handleGoogleAuth}
             disabled={loading}
             className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-semibold text-xs flex items-center justify-center space-x-2.5 transition-all shadow-md active:scale-98 disabled:opacity-50"
@@ -129,7 +180,7 @@ export const AuthLandingScreen: React.FC = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-3.5">
-            {mode === 'register' && (
+            {activeTab === 'register' && (
               <div>
                 <label className="block text-slate-300 font-semibold text-[11px] mb-1">Full Name</label>
                 <div className="relative">
@@ -176,7 +227,7 @@ export const AuthLandingScreen: React.FC = () => {
               </div>
             </div>
 
-            {mode === 'register' && (
+            {activeTab === 'register' && (
               <div>
                 <label className="block text-slate-300 font-semibold text-[11px] mb-1">University / High School (Optional)</label>
                 <div className="relative">
@@ -197,46 +248,29 @@ export const AuthLandingScreen: React.FC = () => {
               disabled={loading}
               className="w-full py-3 px-4 rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-white font-semibold text-xs transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center space-x-2 active:scale-98 disabled:opacity-50 mt-2"
             >
-              <span>{mode === 'login' ? 'Sign In to Workspace' : 'Create Account'}</span>
+              <span>{activeTab === 'login' ? 'Sign In to Workspace' : 'Create Account'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
-          {/* Toggle between login and register */}
-          <div className="pt-2 flex items-center justify-between text-xs text-slate-400 border-t border-white/10">
-            {mode === 'login' ? (
-              <>
-                <span>Don't have an account?</span>
-                <button
-                  onClick={() => { setMode('register'); setErrorMessage(null); }}
-                  className="text-indigo-400 hover:text-indigo-300 font-semibold underline underline-offset-2"
-                >
-                  Create one now
-                </button>
-              </>
-            ) : (
-              <>
-                <span>Already have an account?</span>
-                <button
-                  onClick={() => { setMode('login'); setErrorMessage(null); }}
-                  className="text-indigo-400 hover:text-indigo-300 font-semibold underline underline-offset-2"
-                >
-                  Sign in
-                </button>
-              </>
-            )}
-          </div>
-
         </div>
 
-        {/* Guest Mode Blank Slate Footer */}
-        <div className="text-center pt-2">
+        {/* Footer Actions: Guest Mode + Reset Data */}
+        <div className="flex flex-col items-center space-y-2 pt-2">
           <button
             onClick={loginAsGuest}
-            className="text-xs text-slate-400 hover:text-white transition-colors inline-flex items-center space-x-1.5 py-1 px-3 rounded-xl hover:bg-white/5"
+            className="text-xs text-slate-300 hover:text-white transition-colors inline-flex items-center space-x-1.5 py-1.5 px-3.5 rounded-xl hover:bg-white/5 bg-white/5 border border-white/5"
           >
             <Compass className="w-3.5 h-3.5 text-indigo-400" />
             <span>Continue as Guest (Blank Canvas)</span>
+          </button>
+
+          <button
+            onClick={wipeAllScholarData}
+            className="text-[11px] text-red-400/80 hover:text-red-300 transition-colors inline-flex items-center space-x-1.5 py-1 px-2 rounded-lg hover:bg-red-500/10"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>Reset & Clear All Local Workspace Data</span>
           </button>
         </div>
 
