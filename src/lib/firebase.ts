@@ -28,16 +28,7 @@ export const signInWithGoogle = async () => {
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
   } catch (error: any) {
-    console.warn("Google popup sign-in issue:", error);
-    if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-      try {
-        await signInWithRedirect(auth, googleProvider);
-        return null;
-      } catch (redirectError) {
-        console.error("Redirect auth error:", redirectError);
-        throw new Error("Google popup window was blocked by browser policies. Please use Email Sign-In or open app in a new tab.");
-      }
-    }
+    console.warn("Google popup sign-in blocked or restricted:", error);
     throw error;
   }
 };
