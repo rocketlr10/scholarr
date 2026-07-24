@@ -34,7 +34,14 @@ import {
   DEFAULT_USER,
   DEFAULT_PREFERENCES
 } from '../utils/storage';
-import { auth, db, signInWithGoogle as firebaseGoogleSignIn, logoutUser as firebaseLogout } from '../lib/firebase';
+import {
+  auth,
+  db,
+  signInWithGoogle as firebaseGoogleSignIn,
+  loginWithEmail as firebaseLoginWithEmail,
+  registerWithEmail as firebaseRegisterWithEmail,
+  logoutUser as firebaseLogout
+} from '../lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import {
   collection,
@@ -48,10 +55,13 @@ import {
 } from 'firebase/firestore';
 
 interface AppContextType {
-  currentUser: User;
+  currentUser: User | null;
   firebaseUser: FirebaseUser | null;
   isFirebaseSignedIn: boolean;
   loginWithGoogle: () => Promise<void>;
+  loginUserWithEmail: (email: string, pass: string) => Promise<boolean>;
+  registerUserWithEmail: (email: string, pass: string, name: string, school?: string) => Promise<boolean>;
+  loginAsGuest: () => void;
   
   allUsers: User[];
   switchUser: (userId: string) => void;
@@ -121,11 +131,16 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [allUsers, setAllUsers] = useState<User[]>(getStoredUsers);
-  const [currentUserId, setCurrentUserIdState] = useState<string>(getCurrentUserId);
+  const [currentUserId, setCurrentUserIdState] = useState<string | null>(getCurrentUserId);
   
-  // Active User object
-  const [currentUser, setCurrentUser] = useState<User>(() => {
-    return allUsers.find(u => u.id === currentUserId) || DEFAULT_USER;
+  // Active User object (null when unauthenticated)
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const localUid = getCurrentUserId();
+    if (localUid) {
+      const stored = getStoredUsers().find(u => u.id === localUid);
+      if (stored) return stored;
+    }
+    return null;
   });
   
   const [currentView, setCurrentView] = useState<string>('dashboard');
@@ -254,22 +269,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           unsubPreferences();
         };
       } else {
-        // Fallback to local storage for guests / unauthenticated users
+        // Check if there is a local saved session
         const localUid = getCurrentUserId();
-        const storedUsers = getStoredUsers();
-        const localUser = storedUsers.find(u => u.id === localUid) || DEFAULT_USER;
-        setCurrentUser(localUser);
-        
-        const userPrefs = getStoredPreferences(localUid);
-        setPreferences(userPrefs);
-        setAccentColorState(userPrefs.accentColor || 'indigo');
-        
-        setAssignments(getStoredAssignments(localUid));
-        setCourses(getStoredCourses(localUid));
-        setEvents(getStoredEvents(localUid));
-        setPomodoros(getStoredPomodoros(localUid));
-        setNotes(getStoredNotes(localUid));
-        setNotifications(getStoredNotifications(localUid));
+        if (localUid) {
+          const storedUsers = getStoredUsers();
+          const localUser = storedUsers.find(u => u.id === localUid);
+          if (localUser) {
+            setCurrentUser(localUser);
+            const userPrefs = getStoredPreferences(localUid);
+            setPreferences(userPrefs);
+            setAccentColorState(userPrefs.accentColor || 'indigo');
+            
+            setAssignments(getStoredAssignments(localUid));
+            setCourses(getStoredCourses(localUid));
+            setEvents(getStoredEvents(localUid));
+            setPomodoros(getStoredPomodoros(localUid));
+            setNotes(getStoredNotes(localUid));
+            setNotifications(getStoredNotifications(localUid));
+            return;
+          }
+        }
+        // Blank state when not logged in
+        setCurrentUser(null);
+        setAssignments([]);
+        setCourses([]);
+        setEvents([]);
+        setPomodoros([]);
+        setNotes([]);
+        setNotifications([]);
       }
     });
 
@@ -283,7 +310,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsAuthModalOpen(false);
     } catch (e) {
       console.error('Failed to log in with Google:', e);
+      throw e;
     }
+  };
+
+  // Login with Email & Password
+  const loginUserWithEmail = async (emailStr: string, passStr: string): Promise<boolean> => {
+    try {
+      await firebaseLoginWithEmail(emailStr, passStr);
+      setIsAuthModalOpen(false);
+      return true;
+    } catch (e) {
+      console.warn("Firebase email login failed, looking up local user...", e);
+      const existing = allUsers.find(u => u.email.toLowerCase() === emailStr.toLowerCase());
+      if (existing) {
+        switchUser(existing.id);
+        setIsAuthModalOpen(false);
+        return true;
+      } else {
+        // Register locally
+        loginUser(emailStr);
+        return true;
+      }
+    }
+  };
+
+  // Register with Email & Password
+  const registerUserWithEmail = async (emailStr: string, passStr: string, nameStr: string, schoolStr?: string): Promise<boolean> => {
+    try {
+      await firebaseRegisterWithEmail(emailStr, passStr, nameStr);
+      setIsAuthModalOpen(false);
+      return true;
+    } catch (e) {
+      console.warn("Firebase email registration failed, creating local profile...", e);
+      registerUser(emailStr, nameStr, schoolStr);
+      return true;
+    }
+  };
+
+  // Guest Login Blank Canvas
+  const loginAsGuest = () => {
+    const guestUser: User = {
+      id: `guest_${Date.now()}`,
+      name: 'Guest Student',
+      email: 'guest@scholar.app',
+      school: 'My School',
+      createdAt: new Date().toISOString(),
+      accentColor: 'indigo',
+    };
+    saveUser(guestUser);
+    saveCurrentUserId(guestUser.id);
+    setCurrentUserIdState(guestUser.id);
+    setAllUsers(getStoredUsers());
+    setCurrentUser(guestUser);
+    setAssignments([]);
+    setCourses([]);
+    setEvents([]);
+    setPomodoros([]);
+    setNotes([]);
+    setNotifications([]);
   };
 
   // Switch Local User
@@ -291,15 +376,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     saveCurrentUserId(userId);
     setCurrentUserIdState(userId);
     const storedUsers = getStoredUsers();
-    const user = storedUsers.find(u => u.id === userId) || DEFAULT_USER;
+    const user = storedUsers.find(u => u.id === userId) || null;
     setCurrentUser(user);
-    
-    setAssignments(getStoredAssignments(userId));
-    setCourses(getStoredCourses(userId));
-    setEvents(getStoredEvents(userId));
-    setPomodoros(getStoredPomodoros(userId));
-    setNotes(getStoredNotes(userId));
-    setNotifications(getStoredNotifications(userId));
+    if (user) {
+      setAssignments(getStoredAssignments(userId));
+      setCourses(getStoredCourses(userId));
+      setEvents(getStoredEvents(userId));
+      setPomodoros(getStoredPomodoros(userId));
+      setNotes(getStoredNotes(userId));
+      setNotifications(getStoredNotifications(userId));
+    }
   };
 
   // Login Local
@@ -343,13 +429,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (firebaseUser) {
       await firebaseLogout();
     }
+    localStorage.removeItem('scholar_current_user_id');
+    setCurrentUserIdState(null);
     setAssignments([]);
     setCourses([]);
     setEvents([]);
     setPomodoros([]);
     setNotes([]);
     setNotifications([]);
-    setCurrentUser(DEFAULT_USER);
+    setCurrentUser(null);
+    setIsAuthModalOpen(false);
   };
 
   // Accent Switcher
@@ -363,7 +452,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (firebaseUser) {
       setDoc(doc(db, 'preferences', firebaseUser.uid), updatedPrefs, { merge: true });
     } else {
-      saveStoredPreferences(currentUser.id, updatedPrefs);
+      saveStoredPreferences(currentUser?.id || 'guest', updatedPrefs);
     }
   };
 
@@ -373,15 +462,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (firebaseUser) {
       setDoc(doc(db, 'preferences', firebaseUser.uid), newPrefs, { merge: true });
     } else {
-      saveStoredPreferences(currentUser.id, newPrefs);
+      saveStoredPreferences(currentUser?.id || 'guest', newPrefs);
     }
   };
 
   // Notification helper
   const addNotification = useCallback((title: string, message: string, type: NotificationItem['type'], linkView?: string) => {
+    const uId = currentUser?.id || 'guest';
     const newItem: NotificationItem = {
       id: `notif_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      userId: currentUser.id,
+      userId: uId,
       title,
       message,
       type,
@@ -391,17 +481,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setNotifications(prev => {
       const updated = [newItem, ...prev];
-      saveStoredNotifications(currentUser.id, updated);
+      saveStoredNotifications(uId, updated);
       return updated;
     });
-  }, [currentUser.id]);
+  }, [currentUser?.id]);
 
   // Assignments CRUD
   const addAssignment = (asg: Omit<Assignment, 'id' | 'userId'>) => {
+    const uId = currentUser?.id || 'guest';
     const newAsg: Assignment = {
       ...asg,
       id: `asg_${Date.now()}`,
-      userId: currentUser.id,
+      userId: uId,
     };
     
     setAssignments(prev => [newAsg, ...prev]);
@@ -409,7 +500,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (firebaseUser) {
       setDoc(doc(db, 'assignments', newAsg.id), newAsg);
     } else {
-      saveStoredAssignments(currentUser.id, [newAsg, ...assignments]);
+      saveStoredAssignments(uId, [newAsg, ...assignments]);
     }
 
     addNotification('New Assignment Created', `"${newAsg.title}" added to your planner.`, 'assignment', 'assignments');
@@ -426,7 +517,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setDoc(doc(db, 'assignments', id), target, { merge: true });
       }
     } else {
-      saveStoredAssignments(currentUser.id, updated);
+      saveStoredAssignments(currentUser?.id || 'guest', updated);
     }
   };
 
@@ -437,16 +528,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (firebaseUser) {
       deleteDoc(doc(db, 'assignments', id));
     } else {
-      saveStoredAssignments(currentUser.id, updated);
+      saveStoredAssignments(currentUser?.id || 'guest', updated);
     }
   };
 
   // Courses CRUD
   const addCourse = (course: Omit<Course, 'id' | 'userId'>) => {
+    const uId = currentUser?.id || 'guest';
     const newCourse: Course = {
       ...course,
       id: `course_${Date.now()}`,
-      userId: currentUser.id,
+      userId: uId,
     };
     
     setCourses(prev => [...prev, newCourse]);
@@ -454,7 +546,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (firebaseUser) {
       setDoc(doc(db, 'courses', newCourse.id), newCourse);
     } else {
-      saveStoredCourses(currentUser.id, [...courses, newCourse]);
+      saveStoredCourses(uId, [...courses, newCourse]);
     }
 
     addNotification('New Class Added', `Course "${newCourse.name} (${newCourse.code})" added.`, 'schoology', 'subjects');
@@ -471,7 +563,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setDoc(doc(db, 'courses', id), target, { merge: true });
       }
     } else {
-      saveStoredCourses(currentUser.id, updated);
+      saveStoredCourses(currentUser?.id || 'guest', updated);
     }
   };
 
@@ -482,16 +574,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (firebaseUser) {
       deleteDoc(doc(db, 'courses', id));
     } else {
-      saveStoredCourses(currentUser.id, updated);
+      saveStoredCourses(currentUser?.id || 'guest', updated);
     }
   };
 
   // Events CRUD
   const addEvent = (evt: Omit<CalendarEvent, 'id' | 'userId'>) => {
+    const uId = currentUser?.id || 'guest';
     const newEvt: CalendarEvent = {
       ...evt,
       id: `evt_${Date.now()}`,
-      userId: currentUser.id,
+      userId: uId,
       googleCalSynced: preferences.googleCal.connected,
     };
     
@@ -500,7 +593,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (firebaseUser) {
       setDoc(doc(db, 'events', newEvt.id), newEvt);
     } else {
-      saveStoredEvents(currentUser.id, [newEvt, ...events]);
+      saveStoredEvents(uId, [newEvt, ...events]);
     }
 
     addNotification('Calendar Event Scheduled', `"${newEvt.title}" added to calendar.`, 'reminder', 'calendar');
@@ -517,7 +610,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setDoc(doc(db, 'events', id), target, { merge: true });
       }
     } else {
-      saveStoredEvents(currentUser.id, updated);
+      saveStoredEvents(currentUser?.id || 'guest', updated);
     }
   };
 
@@ -528,16 +621,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (firebaseUser) {
       deleteDoc(doc(db, 'events', id));
     } else {
-      saveStoredEvents(currentUser.id, updated);
+      saveStoredEvents(currentUser?.id || 'guest', updated);
     }
   };
 
   // Pomodoro
   const addPomodoroSession = (session: Omit<PomodoroSession, 'id' | 'userId' | 'completedAt'>) => {
+    const uId = currentUser?.id || 'guest';
     const newPomo: PomodoroSession = {
       ...session,
       id: `pomo_${Date.now()}`,
-      userId: currentUser.id,
+      userId: uId,
       completedAt: new Date().toISOString(),
     };
     
@@ -546,7 +640,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (firebaseUser) {
       setDoc(doc(db, 'pomodoros', newPomo.id), newPomo);
     } else {
-      saveStoredPomodoros(currentUser.id, [newPomo, ...pomodoros]);
+      saveStoredPomodoros(uId, [newPomo, ...pomodoros]);
     }
 
     addNotification('Focus Session Completed 🎉', `Logged ${newPomo.durationMinutes} mins of deep study time.`, 'timer', 'study');
@@ -554,11 +648,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Notes
   const addNote = (note: Omit<Note, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+    const uId = currentUser?.id || 'guest';
     const now = new Date().toISOString();
     const newNote: Note = {
       ...note,
       id: `note_${Date.now()}`,
-      userId: currentUser.id,
+      userId: uId,
       createdAt: now,
       updatedAt: now,
     };
@@ -568,7 +663,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (firebaseUser) {
       setDoc(doc(db, 'notes', newNote.id), newNote);
     } else {
-      saveStoredNotes(currentUser.id, [newNote, ...notes]);
+      saveStoredNotes(uId, [newNote, ...notes]);
     }
 
     return newNote;
@@ -584,7 +679,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setDoc(doc(db, 'notes', id), target, { merge: true });
       }
     } else {
-      saveStoredNotes(currentUser.id, updated);
+      saveStoredNotes(currentUser?.id || 'guest', updated);
     }
   };
 
@@ -595,7 +690,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (firebaseUser) {
       deleteDoc(doc(db, 'notes', id));
     } else {
-      saveStoredNotes(currentUser.id, updated);
+      saveStoredNotes(currentUser?.id || 'guest', updated);
     }
   };
 
@@ -603,18 +698,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const markNotificationRead = (id: string) => {
     const updated = notifications.map(n => n.id === id ? { ...n, read: true } : n);
     setNotifications(updated);
-    saveStoredNotifications(currentUser.id, updated);
+    if (currentUser) saveStoredNotifications(currentUser.id, updated);
   };
 
   const markAllNotificationsRead = () => {
     const updated = notifications.map(n => ({ ...n, read: true }));
     setNotifications(updated);
-    saveStoredNotifications(currentUser.id, updated);
+    if (currentUser) saveStoredNotifications(currentUser.id, updated);
   };
 
   const clearNotifications = () => {
     setNotifications([]);
-    saveStoredNotifications(currentUser.id, []);
+    if (currentUser) saveStoredNotifications(currentUser.id, []);
   };
 
   // Schoology Live Sync Simulator
@@ -649,7 +744,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       googleCal: {
         ...preferences.googleCal,
         connected: true,
-        email: currentUser.email || 'student@gmail.com',
+        email: currentUser?.email || 'student@gmail.com',
         lastSynced: new Date().toISOString(),
       },
     };
@@ -703,6 +798,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         firebaseUser,
         isFirebaseSignedIn: !!firebaseUser,
         loginWithGoogle,
+        loginUserWithEmail,
+        registerUserWithEmail,
+        loginAsGuest,
         allUsers,
         switchUser,
         loginUser,

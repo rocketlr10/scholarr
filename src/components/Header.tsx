@@ -90,7 +90,7 @@ export const Header: React.FC = () => {
               {viewTitles[currentView] || 'Scholar'}
             </h2>
             <p className="text-[11px] text-slate-400 font-medium hidden sm:block">
-              {currentUser.school} • {timeString}
+              {currentUser?.school || 'My School'} • {timeString}
             </p>
           </div>
         </div>
@@ -160,7 +160,7 @@ export const Header: React.FC = () => {
             onClick={() => setIsAuthModalOpen(true)}
             className="p-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
           >
-            {currentUser.avatar ? (
+            {currentUser?.avatar ? (
               <img
                 src={currentUser.avatar}
                 alt={currentUser.name}

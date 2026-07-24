@@ -6,6 +6,7 @@ import { NotificationDrawer } from './components/NotificationDrawer';
 import { CommandPalette } from './components/CommandPalette';
 import { QuickAddModal } from './components/QuickAddModal';
 import { AuthModal } from './components/AuthModal';
+import { AuthLandingScreen } from './components/AuthLandingScreen';
 import { SchoologyTutorialModal } from './components/modals/SchoologyTutorialModal';
 
 import { DashboardView } from './components/views/DashboardView';
@@ -18,7 +19,11 @@ import { AnalyticsView } from './components/views/AnalyticsView';
 import { SettingsView } from './components/views/SettingsView';
 
 const MainContent: React.FC = () => {
-  const { currentView } = useApp();
+  const { currentUser, currentView } = useApp();
+
+  if (!currentUser) {
+    return <AuthLandingScreen />;
+  }
 
   const renderView = () => {
     switch (currentView) {

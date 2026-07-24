@@ -113,30 +113,52 @@ export const DashboardView: React.FC = () => {
         <div className="lg:col-span-8 bg-white/5 backdrop-blur-md border border-white/10 rounded-[2rem] p-6 relative overflow-hidden flex flex-col justify-between shadow-xl">
           <div className="absolute top-[-50px] right-[-50px] w-[200px] h-[200px] bg-indigo-500/10 blur-[80px] rounded-full pointer-events-none" />
 
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold mb-1 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Active Focus Session</span>
+          {pomodoros.length > 0 ? (
+            <>
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold mb-1 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Recent Study Session</span>
+                  </div>
+                  <h3 className="text-2xl font-semibold text-white">{pomodoros[0].courseName || 'Deep Focus'}</h3>
+                  <p className="text-zinc-400 text-sm mt-0.5">{pomodoros[0].taskLabel || 'Study Block'}</p>
+                </div>
+                <div className="text-4xl font-mono text-white tracking-tight font-semibold">{pomodoros[0].durationMinutes}:00</div>
               </div>
-              <h3 className="text-2xl font-semibold text-white">Data Structures & Algorithms</h3>
-              <p className="text-zinc-400 text-sm mt-0.5">CS 106B • Unit 4: Heap Trees & Queues</p>
-            </div>
-            <div className="text-4xl font-mono text-white tracking-tight font-semibold">23:45</div>
-          </div>
 
-          <div className="flex gap-4 items-center mt-6">
-            <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
-              <div className="h-full bg-indigo-500 w-3/4 rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(99,102,241,0.5)]" />
+              <div className="flex gap-4 items-center mt-6">
+                <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                  <div className="h-full bg-indigo-500 w-full rounded-full shadow-[0_0_12px_rgba(99,102,241,0.5)]" />
+                </div>
+                <button
+                  onClick={() => setCurrentView('study')}
+                  className="px-4 py-2 bg-indigo-500 hover:bg-indigo-400 rounded-xl text-xs font-semibold text-white transition-all"
+                >
+                  Open Study Timer
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="py-8 flex flex-col items-center text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
+                <Timer className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">No Active Focus Session</h3>
+                <p className="text-xs text-zinc-400 max-w-sm mt-1">
+                  Ready to start studying? Launch the Pomodoro timer to log focus hours and track your daily streak.
+                </p>
+              </div>
+              <button
+                onClick={() => setCurrentView('study')}
+                className="px-4 py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-500/20 transition-all active:scale-95 flex items-center space-x-1.5"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Start Focus Timer</span>
+              </button>
             </div>
-            <button
-              onClick={() => setIsFocusing(!isFocusing)}
-              className="p-3 bg-white/10 rounded-full border border-white/10 hover:bg-white/20 text-white transition-all active:scale-95"
-              title={isFocusing ? 'Pause Session' : 'Start Session'}
-            >
-              {isFocusing ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
-            </button>
-          </div>
+          )}
         </div>
 
         {/* Weekly Overview Bar Chart Widget (lg:col-span-4) */}
@@ -144,13 +166,13 @@ export const DashboardView: React.FC = () => {
           <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3">Weekly Overview</div>
           
           <div className="flex items-end justify-between h-20 gap-2 px-1">
-            <div className="w-full bg-indigo-500/30 rounded-t-lg h-[40%]" />
-            <div className="w-full bg-indigo-500/40 rounded-t-lg h-[60%]" />
-            <div className="w-full bg-indigo-500/20 rounded-t-lg h-[30%]" />
-            <div className="w-full bg-indigo-500/60 rounded-t-lg h-[85%]" />
-            <div className="w-full bg-indigo-500 rounded-t-lg h-[95%]" />
-            <div className="w-full bg-white/10 rounded-t-lg h-[15%]" />
-            <div className="w-full bg-white/10 rounded-t-lg h-[10%]" />
+            <div className={`w-full rounded-t-lg transition-all ${totalStudyMinutesThisWeek > 0 ? 'bg-indigo-500/40 h-[40%]' : 'bg-white/5 h-[10%]'}`} />
+            <div className={`w-full rounded-t-lg transition-all ${totalStudyMinutesThisWeek > 0 ? 'bg-indigo-500/60 h-[60%]' : 'bg-white/5 h-[10%]'}`} />
+            <div className={`w-full rounded-t-lg transition-all ${totalStudyMinutesThisWeek > 0 ? 'bg-indigo-500/30 h-[30%]' : 'bg-white/5 h-[10%]'}`} />
+            <div className={`w-full rounded-t-lg transition-all ${totalStudyMinutesThisWeek > 0 ? 'bg-indigo-500/80 h-[85%]' : 'bg-white/5 h-[10%]'}`} />
+            <div className={`w-full rounded-t-lg transition-all ${totalStudyMinutesThisWeek > 0 ? 'bg-indigo-500 h-[95%]' : 'bg-white/5 h-[10%]'}`} />
+            <div className="w-full bg-white/5 rounded-t-lg h-[10%]" />
+            <div className="w-full bg-white/5 rounded-t-lg h-[10%]" />
           </div>
 
           <div className="flex justify-between items-center mt-4">
@@ -159,7 +181,7 @@ export const DashboardView: React.FC = () => {
               <div className="text-[10px] text-zinc-500">Study Time This Week</div>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-semibold text-orange-400">7</div>
+              <div className="text-2xl font-semibold text-orange-400">{pomodoros.length > 0 ? 1 : 0}</div>
               <div className="text-[10px] text-zinc-500">Day Streak 🔥</div>
             </div>
           </div>
@@ -242,52 +264,47 @@ export const DashboardView: React.FC = () => {
               </button>
             </div>
 
-            <div className="flex flex-col gap-5">
-              <div className="flex gap-4">
-                <div className="text-xs text-zinc-500 w-12 pt-1 font-mono">09:30</div>
-                <div className="flex-1 pl-4 border-l-2 border-indigo-500/30">
-                  <div className="text-sm font-medium text-white">Lecture: Advanced Calculus</div>
-                  <div className="text-[11px] text-zinc-500">Room 402 • Prof. Higgins</div>
-                </div>
+            {todayEvents.length === 0 ? (
+              <div className="py-8 text-center space-y-2">
+                <p className="text-xs text-zinc-500">No classes or events scheduled for today.</p>
+                <button
+                  onClick={() => setIsQuickAddOpen(true)}
+                  className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-zinc-300 rounded-xl text-xs border border-white/10 transition-colors"
+                >
+                  + Add Event or Class
+                </button>
               </div>
-
-              <div className="flex gap-4">
-                <div className="text-xs text-indigo-400 w-12 pt-1 font-mono font-semibold">11:15</div>
-                <div className="flex-1 pl-4 border-l-2 border-indigo-500 bg-indigo-500/10 rounded-r-xl py-2.5 pr-3">
-                  <div className="text-sm font-semibold text-white">Focus: CS 106B Study Group</div>
-                  <div className="text-[11px] text-zinc-300">Green Library Floor 2 • Table 9</div>
-                  <div className="text-[10px] text-indigo-400 mt-1 uppercase font-bold tracking-tighter flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                    Happening Now
+            ) : (
+              <div className="flex flex-col gap-4">
+                {todayEvents.map(evt => (
+                  <div key={evt.id} className="flex gap-4">
+                    <div className="text-xs text-zinc-500 w-12 pt-1 font-mono">
+                      {evt.startTime || '09:00'}
+                    </div>
+                    <div className="flex-1 pl-4 border-l-2 border-indigo-500/40">
+                      <div className="text-sm font-medium text-white">{evt.title}</div>
+                      <div className="text-[11px] text-zinc-500">{evt.location || 'Online'}</div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-
-              <div className="flex gap-4">
-                <div className="text-xs text-zinc-500 w-12 pt-1 font-mono">14:00</div>
-                <div className="flex-1 pl-4 border-l-2 border-zinc-700">
-                  <div className="text-sm font-medium text-white">Seminar: Political Theory</div>
-                  <div className="text-[11px] text-zinc-500">Bldg 160 • Room 112</div>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <div className="text-xs text-zinc-500 w-12 pt-1 font-mono">16:30</div>
-                <div className="flex-1 pl-4 border-l-2 border-zinc-700">
-                  <div className="text-sm font-medium text-white">Physics 41 Lab Analysis</div>
-                  <div className="text-[11px] text-zinc-500">Hewlett 200 Lab</div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
           <div className="mt-8 pt-4 border-t border-white/5">
             <div className="flex justify-between items-center text-xs text-zinc-500 mb-2">
-              <span>Day Completion Progress</span>
-              <span className="font-mono font-semibold text-zinc-300">75%</span>
+              <span>Day Progress</span>
+              <span className="font-mono font-semibold text-zinc-300">
+                {todayAssignments.length > 0 ? Math.round((assignments.filter(a => a.status === 'completed').length / assignments.length) * 100) : 0}%
+              </span>
             </div>
             <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
-              <div className="h-full bg-indigo-500 w-3/4 shadow-[0_0_12px_rgba(99,102,241,0.5)] rounded-full" />
+              <div
+                className="h-full bg-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.5)] rounded-full transition-all duration-300"
+                style={{
+                  width: `${assignments.length > 0 ? Math.round((assignments.filter(a => a.status === 'completed').length / assignments.length) * 100) : 0}%`
+                }}
+              />
             </div>
           </div>
         </div>

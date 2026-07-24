@@ -80,7 +80,7 @@ export const AuthModal: React.FC = () => {
               {/* Active Profile Banner */}
               <div className="p-3.5 rounded-xl bg-white/10 border border-white/15 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  {currentUser.avatar ? (
+                  {currentUser?.avatar ? (
                     <img
                       src={currentUser.avatar}
                       alt={currentUser.name}
@@ -93,13 +93,13 @@ export const AuthModal: React.FC = () => {
                   )}
                   <div>
                     <h4 className="font-bold text-sm text-white flex items-center gap-1.5">
-                      {currentUser.name}
+                      {currentUser?.name || 'Guest User'}
                       <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                         Active
                       </span>
                     </h4>
-                    <p className="text-xs text-slate-300 mt-0.5">{currentUser.email}</p>
-                    <p className="text-[10px] text-slate-400">{currentUser.school || 'Stanford University'}</p>
+                    <p className="text-xs text-slate-300 mt-0.5">{currentUser?.email || 'Not logged in'}</p>
+                    <p className="text-[10px] text-slate-400">{currentUser?.school || 'My School'}</p>
                   </div>
                 </div>
               </div>
@@ -115,7 +115,7 @@ export const AuthModal: React.FC = () => {
                       key={user.id}
                       onClick={() => switchUser(user.id)}
                       className={`w-full p-2.5 rounded-xl border flex items-center justify-between text-left transition-all ${
-                        user.id === currentUser.id
+                        user.id === currentUser?.id
                           ? 'bg-white/15 border-white/25 text-white shadow-inner'
                           : 'bg-white/5 border-white/5 text-slate-300 hover:bg-white/10'
                       }`}
@@ -129,7 +129,7 @@ export const AuthModal: React.FC = () => {
                           <p className="text-[10px] text-slate-400">{user.email}</p>
                         </div>
                       </div>
-                      {user.id === currentUser.id && (
+                      {user.id === currentUser?.id && (
                         <UserCheck className="w-4 h-4 text-emerald-400" />
                       )}
                     </button>

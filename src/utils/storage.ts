@@ -77,26 +77,16 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [];
 // Helper Storage Getters / Setters
 export function getStoredUsers(): User[] {
   const data = localStorage.getItem(STORAGE_KEYS.USERS);
-  if (!data) {
-    const users = [DEFAULT_USER];
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, DEFAULT_USER.id);
-    return users;
-  }
+  if (!data) return [];
   try {
     return JSON.parse(data);
   } catch {
-    return [DEFAULT_USER];
+    return [];
   }
 }
 
-export function getCurrentUserId(): string {
-  const current = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-  if (!current) {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, DEFAULT_USER.id);
-    return DEFAULT_USER.id;
-  }
-  return current;
+export function getCurrentUserId(): string | null {
+  return localStorage.getItem(STORAGE_KEYS.CURRENT_USER) || null;
 }
 
 export function setCurrentUserId(userId: string) {

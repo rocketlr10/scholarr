@@ -27,6 +27,7 @@ export const Sidebar: React.FC = () => {
     setIsCommandPaletteOpen,
     setIsAuthModalOpen,
     currentUser,
+    preferences,
     accentColor
   } = useApp();
 
@@ -180,16 +181,16 @@ export const Sidebar: React.FC = () => {
           </button>
         </nav>
 
-        {/* Sync Status Box from Design Theme */}
+        {/* Sync Status Box */}
         <div className="my-3 p-3 bg-white/5 rounded-2xl border border-white/5">
           <div className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2 font-bold">Sync Status</div>
           <div className="flex items-center gap-2 mb-2 text-xs text-zinc-300">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-            <span>Schoology Connected</span>
+            <div className={`w-1.5 h-1.5 rounded-full ${preferences?.schoology?.connected ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
+            <span>{preferences?.schoology?.connected ? 'Schoology Sync Active' : 'Schoology Disconnected'}</span>
           </div>
           <div className="flex items-center gap-2 text-xs text-zinc-300">
-            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-            <span>Google Calendar Synced</span>
+            <div className={`w-1.5 h-1.5 rounded-full ${preferences?.googleCal?.connected ? 'bg-indigo-400' : 'bg-zinc-600'}`} />
+            <span>{preferences?.googleCal?.connected ? 'Google Calendar Synced' : 'Google Cal Disconnected'}</span>
           </div>
         </div>
 
@@ -200,7 +201,7 @@ export const Sidebar: React.FC = () => {
             className="w-full p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-between transition-all text-left group"
           >
             <div className="flex items-center space-x-3 overflow-hidden">
-              {currentUser.avatar ? (
+              {currentUser?.avatar ? (
                 <img
                   src={currentUser.avatar}
                   alt={currentUser.name}
@@ -213,9 +214,9 @@ export const Sidebar: React.FC = () => {
               )}
               <div className="truncate">
                 <p className="text-xs font-semibold text-slate-200 truncate group-hover:text-white">
-                  {currentUser.name}
+                  {currentUser?.name || 'Guest'}
                 </p>
-                <p className="text-[10px] text-slate-400 truncate">{currentUser.email}</p>
+                <p className="text-[10px] text-slate-400 truncate">{currentUser?.email || 'Sign in'}</p>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-slate-300 shrink-0" />
